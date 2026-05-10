@@ -2,7 +2,13 @@ import axios from 'axios';
 
 const API = axios.create({ baseURL: '/api' });
 
-export const loginUser = (data) => API.post('/auth/login', data).then(r => r.data);
+API.interceptors.response.use(
+  res => res,
+  err => Promise.reject(err)
+);
+
+export const loginUser = (data) =>
+  API.post('/auth/login', data).then(r => r.data);
 
 export const registerUser = ({ name, email, password, role, avatarFile }) => {
   const form = new FormData();

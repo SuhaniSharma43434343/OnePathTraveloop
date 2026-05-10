@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { ArrowLeft, MapPin, Plus, Clock, Wallet, CheckSquare, FileText, Map as MapIcon, Sparkles, Loader2, GripVertical, CloudRain, Sun, Download, Map as Map2 } from 'lucide-react';
+import {
+  ArrowLeft, MapPin, Plus, Clock, Wallet, CheckSquare, FileText,
+  Map as MapIcon, Sparkles, Loader2, GripVertical, CloudRain, Sun,
+  Download, Map as Map2, DollarSign, ArrowDown
+} from 'lucide-react';
 import { getStops, createStop, getActivities, createActivity } from '../api/itineraryApi';
 import ThemeToggle from '../components/ThemeToggle';
 import BudgetView from '../components/BudgetView';
 import ChecklistView from '../components/ChecklistView';
 import NotesView from '../components/NotesView';
 import MapView from '../components/MapView';
+
+const mockCoordinates = {
+  'Tokyo': { lat: 35.68, lng: 139.65 }, 'Kyoto': { lat: 35.01, lng: 135.76 },
+  'Paris': { lat: 48.85, lng: 2.35 },   'London': { lat: 51.50, lng: -0.12 },
+  'New York': { lat: 40.71, lng: -74.00 }, 'Bali': { lat: -8.34, lng: 115.09 },
+};
+
 export default function TripDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,39 +27,24 @@ export default function TripDetails() {
   const [weatherMap, setWeatherMap] = useState({});
   const [newCity, setNewCity] = useState('');
   const [activeTab, setActiveTab] = useState('itinerary');
-  const [isGenerating, setIsGenerating] = useState(null); 
+  const [isGenerating, setIsGenerating] = useState(null);
 
-  useEffect(() => {
-    loadStops();
-  }, [id]);
+  useEffect(() => { loadStops(); }, [id]);
 
   const loadStops = async () => {
-    const fetchedStops = await getStops(id);
-    setStops(fetchedStops);
-    fetchedStops.forEach(loadActivities);
-    fetchedStops.forEach(loadWeather);
-  };
-
-  // Basic mock lat/lng map for weather since we don't have a real geocoder
-  const mockCoordinates = {
-    'Tokyo': { lat: 35.68, lng: 139.65 },
-    'Kyoto': { lat: 35.01, lng: 135.76 },
-    'Osaka': { lat: 34.69, lng: 135.50 },
-    'Paris': { lat: 48.85, lng: 2.35 },
-    'London': { lat: 51.50, lng: -0.12 },
-    'New York': { lat: 40.71, lng: -74.00 }
+    const fetched = await getStops(id);
+    setStops(fetched);
+    fetched.forEach(s => { loadActivities(s); loadWeather(s); });
   };
 
   const loadWeather = async (stop) => {
     try {
       const coords = mockCoordinates[stop.city];
-      if (!coords) return; // Skip if we don't have mock coords
+      if (!coords) return;
       const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&current_weather=true`);
       const data = await res.json();
       setWeatherMap(prev => ({ ...prev, [stop._id]: data.current_weather }));
-    } catch (err) {
-      console.error("Weather fetch failed", err);
-    }
+    } catch {}
   };
 
   const loadActivities = async (stop) => {
@@ -59,194 +55,213 @@ export default function TripDetails() {
   const handleAddStop = async (e) => {
     e.preventDefault();
     if (!newCity.trim()) return;
-    const newStop = await createStop({ trip: id, city: newCity, order: stops.length });
-    setStops([...stops, newStop]);
+    const s = await createStop({ trip: id, city: newCity, order: stops.length });
+    setStops([...stops, s]);
     setNewCity('');
   };
 
   const handleAddActivity = async (stopId) => {
-    const title = prompt("Enter Activity Title (e.g., Visit Museum):");
+    const title = prompt('Activity Title:');
     if (!title) return;
-    const cost = prompt("Estimated Cost ($):", "0");
+    const cost = prompt('Estimated Cost ($):', '0');
     const act = await createActivity({ stop: stopId, title, cost: Number(cost) });
     setActivitiesMap(prev => ({ ...prev, [stopId]: [...(prev[stopId] || []), act] }));
   };
 
   const handleMagicFill = async (stopId, cityName) => {
     setIsGenerating(stopId);
-    
-    // Simulate AI API Call delay
     await new Promise(r => setTimeout(r, 1500));
-    
-    const mockActivities = [
+    const mockActs = [
       { title: `Explore Downtown ${cityName}`, cost: 0 },
       { title: 'Local Cuisine Tasting', cost: 45 },
       { title: 'Guided Historic Walking Tour', cost: 25 },
     ];
-    
-    let addedActs = [];
-    for (let act of mockActivities) {
-      const added = await createActivity({ stop: stopId, ...act });
-      addedActs.push(added);
+    let added = [];
+    for (let act of mockActs) {
+      const a = await createActivity({ stop: stopId, ...act });
+      added.push(a);
     }
-    
-    setActivitiesMap(prev => ({
-      ...prev,
-      [stopId]: [...(prev[stopId] || []), ...addedActs]
-    }));
+    setActivitiesMap(prev => ({ ...prev, [stopId]: [...(prev[stopId] || []), ...added] }));
     setIsGenerating(null);
   };
 
-  const handleReorder = (newOrder) => {
-    setStops(newOrder);
-  };
-
   const exportPDF = async () => {
-    const element = document.getElementById('itinerary-export-area');
-    if (!element) return;
+    const el = document.getElementById('itinerary-export-area');
+    if (!el) return;
     const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().set({
-      margin:      10,
-      filename:    'Traveloop_Itinerary.pdf',
-      image:       { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).save();
+    html2pdf().set({ margin: 10, filename: 'Traveloop_Itinerary.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' } }).from(el).save();
   };
 
   const tabs = [
-    { id: 'itinerary', label: 'Itinerary', icon: <MapIcon size={18} /> },
-    { id: 'map', label: 'Route Map', icon: <Map2 size={18} /> },
-    { id: 'budget', label: 'Budget', icon: <Wallet size={18} /> },
-    { id: 'checklist', label: 'Checklist', icon: <CheckSquare size={18} /> },
-    { id: 'notes', label: 'Notes', icon: <FileText size={18} /> }
+    { id: 'itinerary', label: 'Itinerary',  icon: <MapIcon size={16} /> },
+    { id: 'map',       label: 'Route Map',  icon: <Map2 size={16} /> },
+    { id: 'budget',    label: 'Budget',     icon: <Wallet size={16} /> },
+    { id: 'checklist', label: 'Checklist',  icon: <CheckSquare size={16} /> },
+    { id: 'notes',     label: 'Notes',      icon: <FileText size={16} /> },
   ];
 
   return (
-    <div className="min-h-screen relative p-6 lg:p-12 z-10 text-gray-900 dark:text-white">
+    <div className="min-h-screen relative p-6 lg:p-10 z-10 text-white">
       <div className="max-w-5xl mx-auto">
-        <header className="flex justify-between items-center mb-12">
-          <button 
-            onClick={() => navigate('/my-trips')}
-            className="flex items-center gap-2 px-4 py-2 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full border border-white/30 hover:bg-white/30 transition-colors"
-          >
-            <ArrowLeft size={20} /> Back to Trips
+        <header className="flex justify-between items-center mb-10">
+          <button onClick={() => navigate('/my-trips')}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors text-white/70 hover:text-white">
+            <ArrowLeft size={18} /> My Trips
           </button>
-          <div className="flex gap-4">
-            <button 
-              onClick={exportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors shadow-lg"
-            >
-              <Download size={18} /> Export PDF
+          <div className="flex gap-3">
+            <button onClick={exportPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-full font-bold hover:bg-emerald-500/30 transition-colors text-sm">
+              <Download size={16} /> Export PDF
             </button>
             <ThemeToggle />
           </div>
         </header>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-4xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600">Trip Command Center</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">Manage every aspect of your journey.</p>
+          <h1 className="text-4xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">
+            Trip Command Center
+          </h1>
+          <p className="text-white/40">Manage every aspect of your journey.</p>
         </motion.div>
 
-        {/* Custom Tabs */}
-        <div className="flex gap-2 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 overflow-x-auto scrollbar-hide pb-1">
           {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all whitespace-nowrap ${
-                activeTab === tab.id 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' 
-                  : 'bg-white/20 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-gray-700/60'
-              }`}
-            >
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
+                activeTab === tab.id
+                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                  : 'bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10'
+              }`}>
               {tab.icon} {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'itinerary' && (
-              <div id="itinerary-export-area">
-              <Reorder.Group axis="y" values={stops} onReorder={handleReorder} className="relative border-l-4 border-indigo-500/30 ml-4 space-y-12 pb-12">
-                {stops.map((stop) => (
-                  <Reorder.Item key={stop._id} value={stop} className="relative pl-8 cursor-grab active:cursor-grabbing">
-                    <div className="absolute -left-3 top-0 w-6 h-6 bg-indigo-500 rounded-full border-4 border-white dark:border-gray-900 shadow-lg" />
-                    <div className="bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl">
-                      
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <GripVertical className="text-gray-400 hover:text-gray-600 cursor-grab" size={24} />
-                          <MapPin className="text-indigo-500" size={28} />
-                          <h2 className="text-3xl font-bold">{stop.city}</h2>
-                          {weatherMap[stop._id] && (
-                            <div className="flex items-center gap-1 text-sm bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full ml-2">
-                              {weatherMap[stop._id].temperature > 15 ? <Sun size={14} /> : <CloudRain size={14} />}
-                              {weatherMap[stop._id].temperature}°C
-                            </div>
-                          )}
-                        </div>
-                        <button 
-                          onClick={() => handleMagicFill(stop._id, stop.city)}
-                          disabled={isGenerating === stop._id}
-                          className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md hover:scale-105 transition-transform disabled:opacity-50"
-                        >
-                          {isGenerating === stop._id ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                          AI Magic Fill
-                        </button>
-                      </div>
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.2 }}>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        {(activitiesMap[stop._id] || []).map((act) => (
-                          <div key={act._id} className="p-4 rounded-2xl bg-gradient-to-br from-white/60 to-white/20 dark:from-gray-800/60 dark:to-gray-900/20 border border-white/30 shadow-md flex justify-between items-center hover:scale-[1.02] transition-transform">
-                            <div>
-                              <h4 className="font-bold">{act.title}</h4>
-                              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 mt-2">
-                                <span className="flex items-center gap-1"><Clock size={14} /> Anytime</span>
+            {activeTab === 'itinerary' && (
+              <div id="itinerary-export-area" className="space-y-2">
+                <Reorder.Group axis="y" values={stops} onReorder={setStops} className="space-y-2">
+                  {stops.map((stop, dayIdx) => {
+                    const acts = activitiesMap[stop._id] || [];
+                    const totalCost = acts.reduce((s, a) => s + (a.cost || 0), 0);
+                    return (
+                      <React.Fragment key={stop._id}>
+                        <Reorder.Item value={stop} className="cursor-grab active:cursor-grabbing">
+                          <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-white/20 transition-all">
+                            {/* Day Header */}
+                            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-b border-white/5">
+                              <div className="flex items-center gap-3">
+                                <GripVertical size={18} className="text-white/20" />
+                                <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">
+                                  {dayIdx + 1}
+                                </div>
+                                <div>
+                                  <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Day {dayIdx + 1}</p>
+                                  <div className="flex items-center gap-2">
+                                    <MapPin size={16} className="text-emerald-400" />
+                                    <h2 className="text-xl font-bold text-white">{stop.city}</h2>
+                                    {weatherMap[stop._id] && (
+                                      <span className="flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-full">
+                                        {weatherMap[stop._id].temperature > 15 ? <Sun size={12} /> : <CloudRain size={12} />}
+                                        {weatherMap[stop._id].temperature}°C
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
+                              <button
+                                onClick={() => handleMagicFill(stop._id, stop.city)}
+                                disabled={isGenerating === stop._id}
+                                className="flex items-center gap-2 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border border-purple-500/30 text-purple-300 px-4 py-2 rounded-full font-bold text-xs hover:from-purple-500/30 hover:to-indigo-500/30 transition-all disabled:opacity-50"
+                              >
+                                {isGenerating === stop._id ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                AI Magic Fill
+                              </button>
                             </div>
-                            <div className="flex items-center justify-center min-w-[3rem] h-12 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold px-2">
-                              ${act.cost || 0}
+
+                            {/* Activity vs Expense columns */}
+                            <div className="p-5">
+                              {acts.length > 0 ? (
+                                <>
+                                  {/* Column headers */}
+                                  <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                                      <Clock size={12} /> Activity
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-white/40 uppercase tracking-wider">
+                                      <DollarSign size={12} /> Expense
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {acts.map((act, actIdx) => (
+                                      <motion.div
+                                        key={act._id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: actIdx * 0.05 }}
+                                        className="grid grid-cols-2 gap-3 items-center"
+                                      >
+                                        <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 border border-white/5">
+                                          <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
+                                          <span className="text-sm text-white/80 font-medium truncate">{act.title}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 bg-emerald-500/10 rounded-xl px-4 py-2.5 border border-emerald-500/20">
+                                          <DollarSign size={14} className="text-emerald-400 flex-shrink-0" />
+                                          <span className="text-sm text-emerald-400 font-bold">{act.cost || 0}</span>
+                                        </div>
+                                      </motion.div>
+                                    ))}
+                                  </div>
+                                  {/* Total row */}
+                                  <div className="flex justify-end mt-3 pt-3 border-t border-white/5">
+                                    <span className="text-sm text-white/40 mr-3">Day Total:</span>
+                                    <span className="text-emerald-400 font-bold">${totalCost}</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-white/20 text-sm text-center py-4">No activities yet</p>
+                              )}
+                              <button onClick={() => handleAddActivity(stop._id)}
+                                className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
+                                <Plus size={16} /> Add Activity
+                              </button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                      <button onClick={() => handleAddActivity(stop._id)} className="flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 transition-colors">
-                        <Plus size={16} /> Add Activity
-                      </button>
-                    </div>
-                  </Reorder.Item>
-                ))}
-                <div className="relative pl-8">
-                  <div className="absolute -left-3 top-4 w-6 h-6 bg-gray-300 dark:bg-gray-700 rounded-full border-4 border-white dark:border-gray-900" />
-                  <form onSubmit={handleAddStop} className="flex items-center gap-4 bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 rounded-3xl p-4 shadow-xl">
-                    <input 
-                      required value={newCity} onChange={e => setNewCity(e.target.value)}
-                      placeholder="Where to next? (e.g. Tokyo)"
-                      className="flex-1 bg-transparent border-none outline-none text-lg font-bold placeholder-gray-500 px-4"
-                    />
-                    <button type="submit" className="bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-700 transition-colors">
-                      <Plus size={24} />
-                    </button>
-                  </form>
-                </div>
-              </Reorder.Group>
+                        </Reorder.Item>
+
+                        {/* Connection arrow between stops */}
+                        {dayIdx < stops.length - 1 && (
+                          <div className="flex justify-center py-1">
+                            <ArrowDown size={20} className="text-white/15" />
+                          </div>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </Reorder.Group>
+
+                {/* Add Stop */}
+                <form onSubmit={handleAddStop} className="flex items-center gap-3 bg-white/5 border border-dashed border-white/15 rounded-3xl p-4 mt-4">
+                  <MapPin size={20} className="text-white/20 flex-shrink-0" />
+                  <input
+                    required value={newCity} onChange={e => setNewCity(e.target.value)}
+                    placeholder="Add next destination (e.g. Tokyo)"
+                    className="flex-1 bg-transparent outline-none text-white placeholder-white/20 font-semibold"
+                  />
+                  <button type="submit" className="bg-emerald-500 text-white p-2.5 rounded-xl hover:bg-emerald-400 transition-colors">
+                    <Plus size={20} />
+                  </button>
+                </form>
               </div>
             )}
 
-            {activeTab === 'map' && <MapView stops={stops} />}
-            {activeTab === 'budget' && <BudgetView tripId={id} />}
+            {activeTab === 'map'       && <MapView stops={stops} />}
+            {activeTab === 'budget'    && <BudgetView tripId={id} />}
             {activeTab === 'checklist' && <ChecklistView tripId={id} />}
-            {activeTab === 'notes' && <NotesView tripId={id} />}
-
+            {activeTab === 'notes'     && <NotesView tripId={id} />}
           </motion.div>
         </AnimatePresence>
       </div>

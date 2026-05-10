@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api/utilities' });
+const api = axios.create({ baseURL: '/api' });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
@@ -8,13 +8,16 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Checklist
-export const getChecklist = async (tripId) => (await api.get(`/${tripId}/checklist`)).data;
-export const addChecklistItem = async (tripId, data) => (await api.post(`/${tripId}/checklist`, data)).data;
-export const updateChecklistItem = async (id, data) => (await api.put(`/checklist/${id}`, data)).data;
-export const deleteChecklistItem = async (id) => (await api.delete(`/checklist/${id}`)).data;
+api.interceptors.response.use(
+  res => res,
+  err => Promise.reject(new Error(err.response?.data?.message || err.message))
+);
 
-// Notes
-export const getNotes = async (tripId) => (await api.get(`/${tripId}/notes`)).data;
-export const addNote = async (tripId, data) => (await api.post(`/${tripId}/notes`, data)).data;
-export const deleteNote = async (id) => (await api.delete(`/notes/${id}`)).data;
+export const getChecklist        = async (tripId) => (await api.get(`/utilities/${tripId}/checklist`)).data;
+export const addChecklistItem    = async (tripId, data) => (await api.post(`/utilities/${tripId}/checklist`, data)).data;
+export const updateChecklistItem = async (id, data)    => (await api.put(`/utilities/checklist/${id}`, data)).data;
+export const deleteChecklistItem = async (id)          => (await api.delete(`/utilities/checklist/${id}`)).data;
+
+export const getNotes   = async (tripId)       => (await api.get(`/utilities/${tripId}/notes`)).data;
+export const addNote    = async (tripId, data) => (await api.post(`/utilities/${tripId}/notes`, data)).data;
+export const deleteNote = async (id)           => (await api.delete(`/utilities/notes/${id}`)).data;

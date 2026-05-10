@@ -1,32 +1,19 @@
 import axios from 'axios';
 
-const apiStops = axios.create({ baseURL: '/api/stops' });
-const apiActivities = axios.create({ baseURL: '/api/activities' });
+const api = axios.create({ baseURL: '/api' });
 
-[apiStops, apiActivities].forEach(api => {
-  api.interceptors.request.use(config => {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  });
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
-export const getStops = async (tripId) => {
-  const { data } = await apiStops.get(`/trip/${tripId}`);
-  return data;
-};
+api.interceptors.response.use(
+  res => res,
+  err => Promise.reject(new Error(err.response?.data?.message || err.message))
+);
 
-export const createStop = async (stopData) => {
-  const { data } = await apiStops.post('/', stopData);
-  return data;
-};
-
-export const getActivities = async (stopId) => {
-  const { data } = await apiActivities.get(`/stop/${stopId}`);
-  return data;
-};
-
-export const createActivity = async (activityData) => {
-  const { data } = await apiActivities.post('/', activityData);
-  return data;
-};
+export const getStops       = async (tripId) => (await api.get(`/stops/trip/${tripId}`)).data;
+export const createStop     = async (data)   => (await api.post('/stops', data)).data;
+export const getActivities  = async (stopId) => (await api.get(`/activities/stop/${stopId}`)).data;
+export const createActivity = async (data)   => (await api.post('/activities', data)).data;

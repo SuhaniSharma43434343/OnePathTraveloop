@@ -5,14 +5,14 @@ import { ThemeProvider } from './context/ThemeContext';
 import AuthPage from './pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import Dashboard from './pages/Dashboard';
-
 import Background3D from './components/Background3D';
-
 import MyTrips from './pages/MyTrips';
 import TripDetails from './pages/TripDetails';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import SharedItinerary from './pages/SharedItinerary';
+import ItineraryBuilder from './pages/ItineraryBuilder';
+import CommunityTab from './pages/CommunityTab';
 
 const Protected = ({ children }) => {
   const { user, loading } = useAuth();
@@ -27,16 +27,17 @@ export default function App() {
         <Background3D />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<AuthPage />} />
-            <Route path="/welcome" element={<Protected><WelcomePage /></Protected>} />
-            <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-            <Route path="/my-trips" element={<Protected><MyTrips /></Protected>} />
-            <Route path="/trips/:id" element={<Protected><TripDetails /></Protected>} />
-            <Route path="/profile" element={<Protected><UserProfile /></Protected>} />
-            <Route path="/admin" element={<Protected><AdminDashboard /></Protected>} />
-            {/* Public route */}
+            <Route path="/"           element={<AuthPage />} />
+            <Route path="/welcome"    element={<Protected><WelcomePage /></Protected>} />
+            <Route path="/dashboard"  element={<Protected><Dashboard /></Protected>} />
+            <Route path="/my-trips"   element={<Protected><MyTrips /></Protected>} />
+            <Route path="/trips/:id"  element={<Protected><TripDetails /></Protected>} />
+            <Route path="/profile"    element={<Protected><UserProfile /></Protected>} />
+            <Route path="/admin"      element={<Protected><AdminDashboard /></Protected>} />
+            <Route path="/itinerary-builder" element={<Protected><ItineraryBuilder /></Protected>} />
+            <Route path="/community"  element={<Protected><CommunityTab /></Protected>} />
             <Route path="/shared/:id" element={<SharedItinerary />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
