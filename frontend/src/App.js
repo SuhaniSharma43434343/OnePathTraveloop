@@ -10,6 +10,9 @@ import Background3D from './components/Background3D';
 
 import MyTrips from './pages/MyTrips';
 import TripDetails from './pages/TripDetails';
+import UserProfile from './pages/UserProfile';
+import AdminDashboard from './pages/AdminDashboard';
+import SharedItinerary from './pages/SharedItinerary';
 
 const Protected = ({ children }) => {
   const { user, loading } = useAuth();
@@ -29,6 +32,10 @@ export default function App() {
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/my-trips" element={<Protected><MyTrips /></Protected>} />
             <Route path="/trips/:id" element={<Protected><TripDetails /></Protected>} />
+            <Route path="/profile" element={<Protected><UserProfile /></Protected>} />
+            <Route path="/admin" element={<Protected><AdminDashboard /></Protected>} />
+            {/* Public route */}
+            <Route path="/shared/:id" element={<SharedItinerary />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

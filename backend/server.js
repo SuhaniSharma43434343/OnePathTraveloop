@@ -21,6 +21,7 @@ app.use('/api/user', require('./routes/user'));
 app.use('/api/trips', require('./routes/trips'));
 app.use('/api/stops', require('./routes/stops'));
 app.use('/api/activities', require('./routes/activities'));
+app.use('/api/utilities', require('./routes/utilities'));
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 

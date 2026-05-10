@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import { motion } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
-import { Plane, Map, Plus, Compass } from 'lucide-react';
+import { Plane, Map, Plus, Compass, User, ShieldCheck } from 'lucide-react';
 import Globe from '../components/Globe';
 import CreateTripModal from '../components/CreateTripModal';
 import { getTrips } from '../api/tripApi';
@@ -32,6 +32,12 @@ export default function Dashboard() {
           Traveloop
         </div>
         <div className="flex items-center gap-6">
+          <button onClick={() => navigate('/admin')} className="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-colors">
+            <ShieldCheck size={24} />
+          </button>
+          <button onClick={() => navigate('/profile')} className="text-gray-600 dark:text-gray-300 hover:text-indigo-500 transition-colors">
+            <User size={24} />
+          </button>
           <ThemeToggle />
           <div className="flex items-center gap-3 backdrop-blur-md bg-white/10 dark:bg-black/20 px-4 py-2 rounded-full border border-white/20">
             <span className="font-semibold text-gray-800 dark:text-gray-200">{user?.name}</span>
