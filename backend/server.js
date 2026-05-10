@@ -18,6 +18,9 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
+app.use('/api/trips', require('./routes/trips'));
+app.use('/api/stops', require('./routes/stops'));
+app.use('/api/activities', require('./routes/activities'));
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 
@@ -29,10 +32,9 @@ app.use((err, req, res, next) => {
 });
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(process.env.PORT || 5000, () =>
-      console.log(`Server running on port ${process.env.PORT || 5000}`)
-    );
-  })
+  .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('DB connection error:', err));
+
+app.listen(process.env.PORT || 5000, () =>
+  console.log(`Server running on port ${process.env.PORT || 5000}`)
+);

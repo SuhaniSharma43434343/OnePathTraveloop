@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { loginUser, registerUser } from '../api/userApi';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plane, Camera } from 'lucide-react';
 import './styles/AuthPage.css';
 
 const EMPTY_FIELDS = { name: '', email: '', password: '', role: 'traveler' };
@@ -100,12 +102,29 @@ export default function AuthPage() {
     : null;
 
   return (
-    <div className="auth-page">
-      <ThemeToggle />
-      <div className="auth-card animate-1">
-        <div className="auth-logo">✈️</div>
-        <h1 className="auth-title">OnePathTravel</h1>
-        <p className="auth-subtitle">{mode === 'login' ? 'Welcome back' : 'Create your account'}</p>
+    <div className="min-h-screen flex items-center justify-center relative bg-transparent p-4">
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+      <motion.div 
+        initial={{ opacity: 0, y: 40, rotateX: 10 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+        transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
+        className="w-full max-w-md p-8 rounded-[2rem] backdrop-blur-2xl bg-white/40 dark:bg-black/40 border border-white/50 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.15)] relative z-10"
+      >
+        <div className="flex justify-center mb-6">
+          <motion.div 
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            className="p-4 bg-indigo-500/20 rounded-full text-indigo-600 dark:text-indigo-400"
+          >
+            <Plane size={32} />
+          </motion.div>
+        </div>
+        <h1 className="text-3xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">Traveloop</h1>
+        <p className="text-center text-gray-600 dark:text-gray-300 mb-8 font-medium">
+          {mode === 'login' ? 'Welcome back' : 'Create your journey'}
+        </p>
 
         <div className="auth-tabs">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>Login</button>
@@ -191,14 +210,20 @@ export default function AuthPage() {
 
           {errors.form && <p className="form-error">{errors.form}</p>}
 
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit" 
+            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-lg shadow-indigo-500/30 transition-all flex justify-center items-center gap-2 mt-4"
+            disabled={loading}
+          >
             {loading
-              ? <><span className="spinner" /> {mode === 'login' ? 'Signing in…' : 'Creating account…'}</>
+              ? <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {mode === 'login' ? 'Signing in…' : 'Creating account…'}</>
               : mode === 'login' ? 'Sign In' : 'Create Account'
             }
-          </button>
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
