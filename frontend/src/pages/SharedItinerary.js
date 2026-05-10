@@ -17,7 +17,6 @@ export default function SharedItinerary() {
 
   const loadData = async () => {
     try {
-      // In a real app, this endpoint would bypass auth if trip is public
       const fetchedStops = await getStops(id);
       setStops(fetchedStops);
       for (let stop of fetchedStops) {
@@ -25,7 +24,8 @@ export default function SharedItinerary() {
         setActivitiesMap(prev => ({ ...prev, [stop._id]: acts }));
       }
     } catch (err) {
-      console.error(err);
+      // Trip may require auth or not exist — show empty state gracefully
+      console.warn('Could not load shared itinerary:', err?.response?.status);
     }
   };
 

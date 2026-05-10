@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Text, ContactShadows, Environment } from '@react-three/drei';
+import { Float, Text, ContactShadows } from '@react-three/drei';
 
 function BadgeMesh({ color, label, position }) {
   const meshRef = useRef();
@@ -34,9 +34,9 @@ export default function Badges3D() {
   return (
     <div className="w-full h-64 bg-gray-900 rounded-3xl overflow-hidden shadow-inner relative border border-white/10">
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <Environment preset="city" />
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[10, 10, 5]} intensity={1.5} />
+        <pointLight position={[-10, -10, -5]} intensity={0.5} color="#818cf8" />
         
         <BadgeMesh position={[-2, 0.5, 0]} color="#fbbf24" label="First Trip Planner" />
         <BadgeMesh position={[0, 0.5, 0]} color="#3b82f6" label="Globetrotter" />

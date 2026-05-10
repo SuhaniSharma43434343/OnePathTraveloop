@@ -8,8 +8,6 @@ import BudgetView from '../components/BudgetView';
 import ChecklistView from '../components/ChecklistView';
 import NotesView from '../components/NotesView';
 import MapView from '../components/MapView';
-import html2pdf from 'html2pdf.js';
-
 export default function TripDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -103,16 +101,17 @@ export default function TripDetails() {
     setStops(newOrder);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     const element = document.getElementById('itinerary-export-area');
-    const opt = {
-      margin:       10,
-      filename:     'Traveloop_Itinerary.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+    if (!element) return;
+    const html2pdf = (await import('html2pdf.js')).default;
+    html2pdf().set({
+      margin:      10,
+      filename:    'Traveloop_Itinerary.pdf',
+      image:       { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save();
   };
 
   const tabs = [
