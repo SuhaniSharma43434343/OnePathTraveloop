@@ -41,7 +41,9 @@ export default function WelcomePage() {
   if (loading) {
     return (
       <div className="welcome-page">
-        <ThemeToggle />
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
+          <ThemeToggle />
+        </div>
         <div className="welcome-card">
           <div className="loading-avatar-skeleton" />
           <div className="loading-line" style={{ width: 160 }} />
@@ -55,7 +57,9 @@ export default function WelcomePage() {
 
   return (
     <div className="welcome-page">
-      <ThemeToggle />
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
+        <ThemeToggle />
+      </div>
 
       <div className="welcome-card">
         {/* Avatar — click to change */}
